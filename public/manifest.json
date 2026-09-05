@@ -1,0 +1,13 @@
+{
+  "name": "OKC Trash Sorter",
+  "short_name": "Trash Sorter",
+  "description": "Snap a photo of an item and find out which OKC trash/recycling bin it goes in.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f7f5",
+  "theme_color": "#1d8f4f",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

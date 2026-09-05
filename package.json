@@ -1,0 +1,9 @@
+{
+  "name": "okc-trash-sorter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Snap a photo of an item and find out which OKC bin it goes in.",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0"
+  }
+}
