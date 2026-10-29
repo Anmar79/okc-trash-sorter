@@ -22,21 +22,28 @@ on iPhone or Android and it behaves like a native app — no app store needed.
    pick the right category.
 4. The app shows the result as a color-coded card with instructions.
 
-## "Play & Learn" game
+## Games tab
 
-The app has two tabs: **📷 Sort a Photo** (the AI classifier) and
-**🎮 Play & Learn**, a game that teaches the same OKC rules. Players drag an
-item (or tap a bin, or press keys 1–5) into one of the five categories and
-get an explanation of the rule after every answer.
+The app has two tabs: **🗑️ Trash Sorter** (the photo classifier, unchanged)
+and **🎮 Games**, which teaches the same OKC rules through play:
 
-- **Learn & Play** — 12 items (always at least one per bin), with a tip after each.
-- **Beat the Clock** — sort as many as you can in 60 seconds; streaks earn bonus points.
-- **Bin Guide** — browse every item in the game, grouped by bin, with the rule behind it.
+- **Conveyor Rush** — items ride a conveyor belt; drag each one into the
+  right bin (or tap a bin / press 1–5) before it falls off. 3 lives, the belt
+  speeds up every level, and streaks build a combo multiplier.
+- **Daily Challenge** — the same 10 items for everyone each day, with a
+  day-streak counter.
+- **Learn Mode** — 12 items with no timer and an explanation after each answer.
+- **Trash-o-pedia** — every item you've sorted correctly gets unlocked here,
+  alongside the rules for each bin.
+- **Badges** — 10 achievements to unlock.
 
-The game runs entirely in the browser (no API key or network needed) and
-works offline once the app is installed. Link straight to it with `/#game`.
-The game code is `public/game.js` and its item list is `public/game-data.js`
-— if you update `rules.js`, update that list too.
+Wrong answers always show the correct bin and the rule, so players learn as
+they go. Scores, badges and discovered items are saved in the browser.
+
+The games run entirely in the browser (no API key or network needed) and work
+offline once the app is installed. Link straight to them with `/#game`.
+Code: `public/game.js` and `public/game.css`; the item list is
+`public/game-data.js` — if you update `rules.js`, update that list too.
 
 ## Setup
 

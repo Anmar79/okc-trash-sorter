@@ -1,8 +1,8 @@
 // Minimal service worker: caches the app shell so it installs cleanly and
 // opens instantly on repeat visits. Classification calls always go to the
 // network (they need a fresh AI response), so we don't cache /api/*.
-const CACHE_NAME = "trash-sorter-v3";
-const APP_SHELL = ["/", "/index.html", "/game-data.js", "/game.js", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png"];
+const CACHE_NAME = "trash-sorter-v4";
+const APP_SHELL = ["/", "/index.html", "/game-data.js", "/game.js", "/game.css", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
