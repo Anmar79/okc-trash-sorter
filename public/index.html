@@ -48,11 +48,6 @@
   #camera-btn{ background:var(--green); color:#fff; }
   #camera-btn:active{ background:var(--green-dark); }
   #upload-btn{ background:#eceae5; color:var(--ink); }
-  .game-link{
-    display:block; width:100%; max-width:480px; text-align:center; text-decoration:none; font-weight:700;
-    background:var(--blue); color:#fff; border-radius:12px; padding:14px 16px; margin-bottom:16px;
-  }
-  .game-link:active{ background:var(--blue-dark); }
   #classify-btn{ background:var(--ink); color:#fff; width:100%; margin-top:10px; }
   input[type=file]{ display:none; }
   #result{ display:none; }
@@ -87,6 +82,115 @@
   }
   @keyframes spin{ to{ transform:rotate(360deg); } }
   footer{ color:#9a9a9a; font-size:0.75rem; text-align:center; max-width:480px; margin-top:6px; }
+  /* ---------- Tabs ---------- */
+  .tabs{
+    width:100%; max-width:480px; display:flex; gap:6px; padding:5px; margin-bottom:16px;
+    background:#eceae5; border-radius:14px;
+  }
+  .tabs button{ background:transparent; color:#555; padding:11px 8px; font-size:0.95rem; border-radius:10px; }
+  .tabs button[aria-selected="true"]{ background:var(--card); color:var(--ink); box-shadow:0 1px 4px rgba(0,0,0,.12); }
+  .panel{ width:100%; max-width:480px; display:flex; flex-direction:column; align-items:center; }
+  .panel[hidden]{ display:none; }
+
+  /* ---------- "Play & Learn" game (scoped to #game-panel) ---------- */
+  #game-panel{
+    --g-ink:#1a1d21; --g-muted:#666; --g-card:#fff; --g-line:#e4e2dd; --g-soft:#eceae5;
+    --g-ok-bg:#e3f6ea; --g-ok-ink:#146637; --g-bad-bg:#fdeceb; --g-bad-ink:#8c281c;
+    -webkit-user-select:none; user-select:none;
+  }
+  #game-panel [hidden]{ display:none !important; }
+  #game-panel section{ width:100%; }
+  #game-panel h1{ font-size:1.5rem; margin:0 0 6px; }
+  #game-panel h2{ font-size:1.15rem; margin:0 0 10px; }
+  #game-panel p{ line-height:1.5; }
+  #game-panel .muted{ color:var(--g-muted); }
+  #game-panel .game-top{ width:100%; display:flex; justify-content:flex-end; margin:-6px 0 8px; }
+  #game-panel .icon-btn{ flex:0; background:var(--g-soft); color:var(--g-ink); padding:6px 12px; font-size:1rem; border-radius:10px; }
+  #game-panel button.big{ width:100%; margin-top:10px; color:#fff; background:var(--green); font-weight:700; }
+  #game-panel button.big.alt{ background:var(--blue); }
+  #game-panel button.big.plain{ background:var(--g-soft); color:var(--g-ink); }
+  #game-panel button.big:active{ filter:brightness(.9); }
+  #game-panel .hero{ text-align:center; }
+  #game-panel .emoji-row{ font-size:2.2rem; letter-spacing:6px; margin-bottom:8px; }
+  #game-panel .best{ font-size:0.85rem; margin-top:12px; }
+  #game-panel .mode-desc{ font-size:0.85rem; margin:4px 0 0; text-align:left; }
+
+  #game-panel .hud{ display:flex; gap:8px; margin-bottom:12px; }
+  #game-panel .hud div{ flex:1; background:var(--g-card); border:1px solid var(--g-line); border-radius:12px; padding:8px 10px; text-align:center; }
+  #game-panel .hud b{ display:block; font-size:1.2rem; }
+  #game-panel .hud span{ font-size:0.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--g-muted); }
+  #game-panel .bar{ height:8px; border-radius:99px; background:var(--g-soft); overflow:hidden; margin-bottom:14px; }
+  #game-panel .bar i{ display:block; height:100%; width:0; background:var(--green); transition:width .3s; }
+  #game-panel .bar.clock i{ background:var(--amber); transition:width 1s linear; }
+
+  #game-panel .stage{ position:relative; height:190px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; }
+  #game-panel .item{
+    width:200px; padding:16px 12px; border-radius:18px; background:var(--g-card); border:2px solid var(--g-line);
+    text-align:center; cursor:grab; touch-action:none; box-shadow:0 6px 18px rgba(0,0,0,.08);
+    transition: transform .2s, opacity .2s;
+  }
+  #game-panel .item.dragging{ cursor:grabbing; transition:none; box-shadow:0 14px 30px rgba(0,0,0,.2); pointer-events:none; z-index:10; position:relative; }
+  #game-panel .item.pop{ animation:g-pop .35s ease-out; }
+  #game-panel .item.shake{ animation:g-shake .4s; }
+  #game-panel .item .e{ font-size:4rem; line-height:1.1; display:block; }
+  #game-panel .item .n{ font-weight:700; font-size:1.05rem; margin-top:6px; display:block; }
+  #game-panel .hint{ text-align:center; font-size:0.8rem; margin:-4px 0 12px; }
+  @keyframes g-pop{ from{ transform:scale(.6); opacity:0; } to{ transform:scale(1); opacity:1; } }
+  @keyframes g-shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-10px)} 75%{transform:translateX(10px)} }
+
+  #game-panel .bins{ display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; }
+  @media (max-width:480px){
+    #game-panel .bins{ grid-template-columns:repeat(6, 1fr); }
+    #game-panel .bins .bin{ grid-column:span 2; }
+    #game-panel .bins .bin:nth-child(4){ grid-column:2 / span 2; }
+  }
+  #game-panel .bin{
+    color:#fff; border-radius:14px; padding:12px 4px 10px; font-weight:400;
+    display:flex; flex-direction:column; align-items:center; gap:4px; min-height:96px;
+    transition:transform .12s, box-shadow .12s, opacity .12s;
+  }
+  #game-panel .bin .bi{ font-size:1.8rem; }
+  #game-panel .bin .bl{ font-weight:700; font-size:0.8rem; line-height:1.15; text-align:center; }
+  #game-panel .bin .bk{ font-size:0.65rem; opacity:.85; }
+  #game-panel .bin.over, #game-panel .bin:focus-visible{ transform:scale(1.07); box-shadow:0 0 0 4px rgba(255,255,255,.7), 0 0 0 7px var(--g-ink); outline:none; }
+  #game-panel .bin:disabled{ opacity:1; }
+  #game-panel .bin.dim{ opacity:.35; }
+  #game-panel .b-regular_trash{ background:var(--blue); }
+  #game-panel .b-recycling{ background:var(--green); }
+  #game-panel .b-bulky_pickup{ background:var(--amber); }
+  #game-panel .b-hazardous_waste{ background:var(--red); }
+  #game-panel .b-not_accepted{ background:var(--gray); }
+
+  #game-panel .feedback{ border-radius:14px; padding:14px; margin-top:14px; }
+  #game-panel .feedback.ok{ background:var(--g-ok-bg); color:var(--g-ok-ink); }
+  #game-panel .feedback.bad{ background:var(--g-bad-bg); color:var(--g-bad-ink); }
+  #game-panel .feedback h3{ margin:0 0 4px; font-size:1.05rem; }
+  #game-panel .feedback p{ margin:0; font-size:0.95rem; }
+  #game-panel .toast{
+    position:fixed; left:50%; top:18px; transform:translateX(-50%); background:var(--g-ink); color:var(--g-card);
+    padding:10px 16px; border-radius:99px; font-weight:700; z-index:50; font-size:0.95rem; max-width:calc(100% - 32px); text-align:center;
+  }
+
+  #game-panel .score-big{ font-size:3rem; font-weight:800; margin:4px 0; }
+  #game-panel .badge{ font-size:3.2rem; }
+  #game-panel .review{ list-style:none; padding:0; margin:0; }
+  #game-panel .review li{ display:flex; gap:10px; padding:10px 0; border-top:1px solid var(--g-line); font-size:0.9rem; }
+  #game-panel .review li:first-child{ border-top:none; }
+  #game-panel .review .e{ font-size:1.8rem; }
+  #game-panel .tag{ display:inline-block; font-size:0.72rem; font-weight:700; color:#fff; border-radius:6px; padding:2px 6px; margin-top:2px; }
+
+  #game-panel details{ border:1px solid var(--g-line); border-radius:12px; margin-bottom:10px; overflow:hidden; background:var(--g-card); }
+  #game-panel summary{ cursor:pointer; padding:12px 14px; font-weight:700; color:#fff; list-style:none; display:flex; gap:10px; align-items:center; }
+  #game-panel summary::-webkit-details-marker{ display:none; }
+  #game-panel summary .count{ margin-left:auto; font-size:0.8rem; opacity:.85; }
+  #game-panel details .blurb{ padding:10px 14px 0; margin:0; font-size:0.9rem; }
+  #game-panel details ul{ list-style:none; margin:0; padding:6px 14px 12px; }
+  #game-panel details li{ padding:6px 0; font-size:0.88rem; border-top:1px solid var(--g-line); }
+  #game-panel details li:first-child{ border-top:none; }
+  #game-panel #g-screen-guide .card p{ margin:0; }
+  @media (prefers-reduced-motion: reduce){
+    #game-panel *{ animation:none !important; transition:none !important; }
+  }
   @media (prefers-color-scheme: dark){
     :root{ color-scheme: dark; }
     body{ background:#15171a; color:#f0f0ee; }
@@ -94,14 +198,28 @@
     #preview-wrap{ background:#2a2d31; border-color:#3a3d41; }
     #upload-btn{ background:#2a2d31; color:#f0f0ee; }
     header p, footer{ color:#8b8f94; }
+    .tabs{ background:#2a2d31; }
+    .tabs button{ color:#a5a9ae; }
+    .tabs button[aria-selected="true"]{ background:#1e2124; color:#f0f0ee; }
+    #game-panel{
+      --g-ink:#f0f0ee; --g-muted:#8b8f94; --g-card:#1e2124; --g-line:#2c2f33; --g-soft:#2a2d31;
+      --g-ok-bg:#16301f; --g-ok-ink:#8fe0ac; --g-bad-bg:#3a1b18; --g-bad-ink:#ffb3a8;
+    }
   }
 </style>
 </head>
 <body>
   <header>
     <h1>🗑️ OKC Trash Sorter</h1>
-    <p>Snap a photo — we'll tell you which bin it goes in, per the City of OKC's rules.</p>
+    <p>Snap a photo to find the right bin — or play the game to learn OKC's rules.</p>
   </header>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" role="tab" id="tab-sort" aria-controls="sort-panel" aria-selected="true">📷 Sort a Photo</button>
+    <button type="button" role="tab" id="tab-game" aria-controls="game-panel" aria-selected="false">🎮 Play &amp; Learn</button>
+  </nav>
+
+  <div class="panel" id="sort-panel" role="tabpanel" aria-labelledby="tab-sort">
 
   <div class="card">
     <div id="preview-wrap">
@@ -134,14 +252,105 @@
     <p id="notes"></p>
     <p id="confidence"></p>
   </div>
+  </div>
 
-  <a class="game-link" href="/game.html">🎮 Play "Sort It!" — learn where trash goes</a>
+  <div class="panel" id="game-panel" role="tabpanel" aria-labelledby="tab-game" hidden>
+    <div class="game-top"><button class="icon-btn" id="g-sound-btn" type="button" aria-label="Toggle sound">🔊</button></div>
+    <!-- HOME -->
+    <section id="g-screen-home">
+      <div class="card hero">
+        <div class="emoji-row" aria-hidden="true">🥫🍌🔋🛋️🛞</div>
+        <h1>Sort It! OKC</h1>
+        <p class="muted">Where does your trash go? Drag each item into the right bin (or tap a bin) and learn Oklahoma City's real "What Goes Where" rules.</p>
+        <button class="big" id="g-play-practice" type="button">🎓 Learn &amp; Play — 12 items</button>
+        <p class="mode-desc muted">Take your time. After every item you'll see why it goes where it goes.</p>
+        <button class="big alt" id="g-play-clock" type="button">⏱️ Beat the Clock — 60 seconds</button>
+        <p class="mode-desc muted">Sort as many as you can before time runs out. Streaks earn bonus points!</p>
+        <button class="big plain" id="g-open-guide" type="button">📘 Bin Guide</button>
+        <p class="best muted" id="g-best-scores"></p>
+      </div>
+    </section>
+
+    <!-- PLAY -->
+    <section id="g-screen-play" hidden>
+      <div class="hud">
+        <div><b id="g-hud-score">0</b><span>Score</span></div>
+        <div><b id="g-hud-streak">0</b><span>Streak 🔥</span></div>
+        <div><b id="g-hud-progress">1/12</b><span id="g-hud-progress-label">Item</span></div>
+      </div>
+      <div class="bar" id="g-bar"><i id="g-bar-fill"></i></div>
+
+      <div class="stage" id="g-stage">
+        <div class="item" id="g-item" role="img">
+          <span class="e" id="g-item-emoji"></span>
+          <span class="n" id="g-item-name"></span>
+        </div>
+      </div>
+      <p class="hint muted" id="g-hint">Drag the item into a bin — or tap a bin. Keys 1–5 work too.</p>
+
+      <div class="bins" id="g-bins"></div>
+
+      <div class="feedback" id="g-feedback" hidden aria-live="polite">
+        <h3 id="g-fb-title"></h3>
+        <p id="g-fb-text"></p>
+        <button class="big" id="g-fb-next" type="button">Next item →</button>
+      </div>
+      <button class="big plain" id="g-quit-btn" type="button">Quit game</button>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="g-screen-results" hidden>
+      <div class="card hero">
+        <div class="badge" id="g-res-badge"></div>
+        <h2 id="g-res-rank"></h2>
+        <div class="score-big" id="g-res-score"></div>
+        <p class="muted" id="g-res-detail"></p>
+        <p id="g-res-best"></p>
+        <button class="big" id="g-again-btn" type="button">Play again</button>
+        <button class="big plain" id="g-home-btn" type="button">Main menu</button>
+      </div>
+      <div class="card" id="g-review-card">
+        <h2>📝 Items to remember</h2>
+        <ul class="review" id="g-review"></ul>
+      </div>
+    </section>
+
+    <!-- GUIDE -->
+    <section id="g-screen-guide" hidden>
+      <div class="card">
+        <h2>📘 OKC Bin Guide</h2>
+        <p class="muted">Tap a bin to see every item in the game and the rule behind it.</p>
+      </div>
+      <div id="g-guide-list"></div>
+      <button class="big" id="g-guide-play" type="button">I'm ready — let's play!</button>
+      <button class="big plain" id="g-guide-home" type="button">Main menu</button>
+    </section>
+
+    <div class="toast" id="g-toast" hidden></div>
+  </div>
 
   <footer>
     Rules sourced from okc.gov "What Goes Where." When in doubt, confirm with the City of Oklahoma City.
   </footer>
 
+<script src="/game-data.js"></script>
+<script src="/game.js"></script>
 <script>
+// Tabs: "Sort a Photo" (AI classifier) and "Play & Learn" (the game).
+// #game in the URL opens straight to the game.
+function showTab(name){
+  const game = name === 'game';
+  document.getElementById('sort-panel').hidden = game;
+  document.getElementById('game-panel').hidden = !game;
+  document.getElementById('tab-sort').setAttribute('aria-selected', String(!game));
+  document.getElementById('tab-game').setAttribute('aria-selected', String(game));
+  if(!game) window.SortItGame.stop();
+  history.replaceState(null, '', game ? '#game' : location.pathname);
+}
+document.getElementById('tab-sort').addEventListener('click', () => showTab('sort'));
+document.getElementById('tab-game').addEventListener('click', () => showTab('game'));
+if(location.hash === '#game') showTab('game');
+
 const cameraBtn = document.getElementById('camera-btn');
 const uploadBtn = document.getElementById('upload-btn');
 const cameraInput = document.getElementById('camera-input');
