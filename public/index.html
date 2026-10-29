@@ -8,10 +8,6 @@
 <link rel="manifest" href="/manifest.json" />
 <link rel="icon" href="/icons/icon-192.png" />
 <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" />
-<link rel="stylesheet" href="/game.css" />
 <style>
   :root{
     --blue:#1c6fd6; --blue-dark:#134f9c;
@@ -86,16 +82,6 @@
   }
   @keyframes spin{ to{ transform:rotate(360deg); } }
   footer{ color:#9a9a9a; font-size:0.75rem; text-align:center; max-width:480px; margin-top:6px; }
-  /* ---------- Tabs ---------- */
-  .tabs{
-    width:100%; max-width:480px; display:flex; gap:6px; padding:5px; margin-bottom:16px;
-    background:#eceae5; border-radius:14px;
-  }
-  .tabs button{ background:transparent; color:#555; padding:11px 8px; font-size:0.95rem; border-radius:10px; }
-  .tabs button[aria-selected="true"]{ background:var(--card); color:var(--ink); box-shadow:0 1px 4px rgba(0,0,0,.12); }
-  .panel{ width:100%; max-width:480px; display:flex; flex-direction:column; align-items:center; }
-  .panel[hidden]{ display:none; }
-
   @media (prefers-color-scheme: dark){
     :root{ color-scheme: dark; }
     body{ background:#15171a; color:#f0f0ee; }
@@ -103,9 +89,6 @@
     #preview-wrap{ background:#2a2d31; border-color:#3a3d41; }
     #upload-btn{ background:#2a2d31; color:#f0f0ee; }
     header p, footer{ color:#8b8f94; }
-    .tabs{ background:#2a2d31; }
-    .tabs button{ color:#a5a9ae; }
-    .tabs button[aria-selected="true"]{ background:#1e2124; color:#f0f0ee; }
   }
 </style>
 </head>
@@ -114,13 +97,6 @@
     <h1>🗑️ OKC Trash Sorter</h1>
     <p>Snap a photo — we'll tell you which bin it goes in, per the City of OKC's rules.</p>
   </header>
-
-  <nav class="tabs" role="tablist">
-    <button type="button" role="tab" id="tab-sort" aria-controls="sort-panel" aria-selected="true">🗑️ Trash Sorter</button>
-    <button type="button" role="tab" id="tab-game" aria-controls="game-panel" aria-selected="false">🎮 Games</button>
-  </nav>
-
-  <div class="panel" id="sort-panel" role="tabpanel" aria-labelledby="tab-sort">
 
   <div class="card">
     <div id="preview-wrap">
@@ -153,32 +129,12 @@
     <p id="notes"></p>
     <p id="confidence"></p>
   </div>
-  </div>
-
-  <div class="panel" id="game-panel" role="tabpanel" aria-labelledby="tab-game" hidden></div>
 
   <footer>
     Rules sourced from okc.gov "What Goes Where." When in doubt, confirm with the City of Oklahoma City.
   </footer>
 
-<script src="/game-data.js"></script>
-<script src="/game.js"></script>
 <script>
-// Tabs: "Trash Sorter" (the photo classifier) and "Games".
-// #game in the URL opens straight to the game.
-function showTab(name){
-  const game = name === 'game';
-  document.getElementById('sort-panel').hidden = game;
-  document.getElementById('game-panel').hidden = !game;
-  document.getElementById('tab-sort').setAttribute('aria-selected', String(!game));
-  document.getElementById('tab-game').setAttribute('aria-selected', String(game));
-  if(!game) window.SortItGame.stop();
-  history.replaceState(null, '', game ? '#game' : location.pathname);
-}
-document.getElementById('tab-sort').addEventListener('click', () => showTab('sort'));
-document.getElementById('tab-game').addEventListener('click', () => showTab('game'));
-if(location.hash === '#game') showTab('game');
-
 const cameraBtn = document.getElementById('camera-btn');
 const uploadBtn = document.getElementById('upload-btn');
 const cameraInput = document.getElementById('camera-input');

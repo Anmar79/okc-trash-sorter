@@ -1,10 +1,12 @@
-// OKC Trash Sorter games — arcade-style learning games for the Games tab.
+// OKC Sort Games — arcade-style learning games (public/games.html).
 //
 // Modes:
 //   rush  — Conveyor Rush: items ride a belt; sort them before they fall off.
 //           3 lives, the belt speeds up every level, combos multiply points.
 //   daily — Daily Challenge: the same 10 items for everyone today (seeded by date).
 //   learn — Learn Mode: 12 items, no timer, a rule explanation after each answer.
+// More games (Swipe It, Bin Catcher, Photo Hunt) live in minigames.js and plug
+// in through window.SortItCore below.
 //
 // Item data comes from game-data.js. All markup is built here: the home/menu
 // screens render into #game-panel, and the full-screen game ("arena") is
@@ -30,6 +32,10 @@ const BADGES = [
   { id:'streak3',  icon:'🗓️', name:'Habit Builder',   desc:'Play the Daily Challenge 3 days in a row' },
   { id:'hazard10', icon:'☣️', name:'Hazard Hero',     desc:'Correctly sort 10 hazardous items' },
   { id:'score5k',  icon:'💎', name:'High Roller',     desc:'Score 5,000 points in one game' },
+  { id:'swipe20',  icon:'👆', name:'Swipe Star',      desc:'Get 20 right in one Swipe It round' },
+  { id:'catch300', icon:'🧺', name:'Catch Master',    desc:'Score 300 in Bin Catcher' },
+  { id:'hunter',   icon:'📸', name:'Photo Hunter',    desc:'Complete a Photo Hunt mission' },
+  { id:'hunter5',  icon:'🕵️', name:'Super Sleuth',    desc:'Complete 5 Photo Hunt missions' },
   { id:'found50',  icon:'🔍', name:'Collector',       desc:'Discover 50 items' },
   { id:'foundAll', icon:'👑', name:'Trash Master',    desc:`Discover all ${ITEMS.length} items` },
 ];
@@ -39,12 +45,13 @@ const esc = (s) => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>
 const binTag = (k) => `<span class="sg-tag" style="background:${COLOR[k]}">${BIN[k].icon} ${esc(BIN[k].label)}</span>`;
 
 // ---------- saved progress (per browser) ----------
-const DEFAULT_SAVE = { best:{ rush:0, daily:0, learn:0 }, found:[], badges:[], hazard:0, sound:true,
+const DEFAULT_SAVE = { best:{ rush:0, daily:0, learn:0, swipe:0, catch:0 }, found:[], badges:[], hazard:0, sound:true, hunt:0,
                        daily:{ date:'', best:0, streak:0 } };
 let save = (function(){
   try{ return Object.assign({}, DEFAULT_SAVE, JSON.parse(localStorage.getItem('sortit.v2')) || {}); }
   catch{ return JSON.parse(JSON.stringify(DEFAULT_SAVE)); }
 })();
+save.best = Object.assign({}, DEFAULT_SAVE.best, save.best);
 function persist(){ try{ localStorage.setItem('sortit.v2', JSON.stringify(save)); }catch{} }
 const found = new Set(save.found);
 
@@ -95,6 +102,18 @@ const sfx = {
 };
 const buzz = (p) => { try{ save.sound && navigator.vibrate && navigator.vibrate(p); }catch{} };
 
+// ---------- read aloud (Web Speech API) ----------
+function speak(text){
+  try{
+    if(!text || !('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, ''));
+    u.lang = 'en-US'; u.rate = 1.02; u.pitch = 1.1;
+    speechSynthesis.speak(u);
+  }catch{}
+}
+function stopSpeaking(){ try{ 'speechSynthesis' in window && speechSynthesis.cancel(); }catch{} }
+
 // ---------- badges ----------
 let earnedThisGame = [];
 function award(id){
@@ -120,20 +139,28 @@ let page = 'home', pediaSel = null;
 function renderPage(){
   if(page === 'pedia') return renderPedia();
   if(page === 'badges') return renderBadges();
-  const best = Math.max(save.best.rush, save.best.daily, save.best.learn);
+  const best = Math.max(...Object.values(save.best));
   const today = dayKey();
   const playedToday = save.daily.date === today;
   const streak = (save.daily.date === today || save.daily.date === yesterdayKey()) ? save.daily.streak : 0;
   const floaters = ['🥫','🍌','🔋','📦','🛞','🧃','💡','🍕'].map((e, i) =>
     `<span style="left:${[4,84,12,90,70,26,50,60][i]}%;top:${[8,12,70,62,82,86,4,40][i]}%;animation-delay:${i * .6}s">${e}</span>`).join('');
+  const pill = (k) => save.best[k] ? `<span class="sg-best">🏆 ${save.best[k].toLocaleString()}</span>` : '<span class="sg-best new">NEW</span>';
+  const tiles = [
+    { id:'daily', icon:'📅', name:'Daily Challenge', desc: streak ? `🔥 ${streak}-day streak` : `Today's ${DAILY_COUNT} items`,
+      badge: playedToday ? `<span class="sg-best">✓ ${save.daily.best.toLocaleString()}</span>` : '<span class="sg-best new">TODAY</span>', cls:'daily' },
+    { id:'swipe', icon:'👆', name:'Swipe It', desc:'Recycle or not? Swipe fast!', badge: pill('swipe'), cls:'swipe' },
+    { id:'catch', icon:'🧺', name:'Bin Catcher', desc:'Tilt or drag to catch', badge: pill('catch'), cls:'catch' },
+    { id:'hunt',  icon:'📸', name:'Photo Hunt', desc:'AI scavenger hunt', badge: save.hunt ? `<span class="sg-best">✓ ${save.hunt}</span>` : '<span class="sg-best new">AI</span>', cls:'hunt' },
+  ];
   panel.innerHTML = `
   <div class="sg">
     <div class="sg-hero">
       <div class="sg-floaters" aria-hidden="true">${floaters}</div>
       <button class="sg-sound" data-act="sound" aria-label="Toggle sound">${save.sound ? '🔊' : '🔇'}</button>
       <div class="sg-mascot" aria-hidden="true">🗑️</div>
-      <h1>OKC Trash Sorter<span>GAMES</span></h1>
-      <p>Race the conveyor belt, chain combos, and become Oklahoma City's top trash sorter.</p>
+      <h1>OKC Sort<span>GAMES</span></h1>
+      <p>Six ways to play and learn where Oklahoma City's trash really goes.</p>
       <div class="sg-stats">
         <div><b>${best.toLocaleString()}</b><span>Best score</span></div>
         <div><b>${found.size}/${ITEMS.length}</b><span>Discovered</span></div>
@@ -142,18 +169,18 @@ function renderPage(){
     </div>
     <button class="sg-mode rush" data-mode="rush">
       <span class="ic">🏭</span>
-      <span><b>Conveyor Rush</b><small>Sort before it falls off the belt! 3 lives — the belt gets faster every level.</small></span>
+      <span><b>Conveyor Rush ${save.best.rush ? `<span class="sg-pill">🏆 ${save.best.rush.toLocaleString()}</span>` : '<span class="sg-pill">FEATURED</span>'}</b>
+      <small>Sort before it falls off the belt! 3 lives — faster every level.</small></span>
       <span class="go">▶</span>
     </button>
-    <button class="sg-mode daily" data-mode="daily">
-      <span class="ic">📅</span>
-      <span><b>Daily Challenge ${playedToday ? '<span class="sg-pill">✓ ' + save.daily.best.toLocaleString() + '</span>' : '<span class="sg-pill">NEW</span>'}</b>
-      <small>Today's ${DAILY_COUNT} items — the same for everyone.${streak ? ` 🔥 ${streak}-day streak` : ' Come back daily to build a streak!'}</small></span>
-      <span class="go">▶</span>
-    </button>
+    <div class="sg-gamegrid">${tiles.map(t => `
+      <button class="sg-game ${t.cls}" data-${t.id === 'daily' ? 'mode' : 'game'}="${t.id}">
+        ${t.badge}<span class="gi">${t.icon}</span><b>${t.name}</b><small>${t.desc}</small>
+      </button>`).join('')}
+    </div>
     <button class="sg-mode learn" data-mode="learn">
       <span class="ic">🎓</span>
-      <span><b>Learn Mode</b><small>${LEARN_COUNT} items, no timer. See why each item goes where it goes.</small></span>
+      <span><b>Learn Mode</b><small>${LEARN_COUNT} items, no timer, and a spoken tip after every answer.</small></span>
       <span class="go">▶</span>
     </button>
     <div class="sg-tiles">
@@ -199,6 +226,7 @@ panel.addEventListener('click', (e) => {
   const t = e.target.closest('button');
   if(!t) return;
   if(t.dataset.mode) return start(t.dataset.mode);
+  if(t.dataset.game){ const g = window.SortItGames && window.SortItGames[t.dataset.game]; if(g) g.start(); return; }
   if(t.dataset.page){ page = t.dataset.page; pediaSel = null; renderPage(); window.scrollTo(0, 0); return; }
   if(t.dataset.item){ pediaSel = t.dataset.item; renderPedia(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
   if(t.dataset.act === 'sound'){ save.sound = !save.sound; persist(); renderPage(); }
@@ -211,7 +239,6 @@ const arena = document.createElement('div');
 arena.className = 'sg-arena';
 arena.hidden = true;
 arena.innerHTML = `
-  <canvas class="sg-fx"></canvas>
   <div class="sg-hud">
     <button class="sg-glass sg-iconbtn" data-act="pause" aria-label="Pause">⏸</button>
     <div class="sg-glass sg-lives" aria-label="Lives"></div>
@@ -233,7 +260,10 @@ arena.innerHTML = `
 document.body.appendChild(arena);
 
 const $a = (sel) => arena.querySelector(sel);
-const itemEl = $a('.sg-item'), beltEl = $a('.sg-belt'), canvas = $a('.sg-fx');
+const itemEl = $a('.sg-item'), beltEl = $a('.sg-belt');
+const canvas = document.createElement('canvas');
+canvas.className = 'sg-fx';
+document.body.appendChild(canvas);
 const binEls = Object.fromEntries([...arena.querySelectorAll('.sg-bin')].map(b => [b.dataset.key, b]));
 
 let G = null;     // current game state, null when no game is running
@@ -447,9 +477,12 @@ function sheet(it, ok, picked){
     </div></div>
     ${!ok && picked ? `<p style="opacity:.7;margin-top:8px">You picked ${esc(BIN[picked].label)}.</p>` : ''}
     <p>💡 ${esc(it.t)}</p>
+    ${'speechSynthesis' in window ? '<button class="sg-cta alt" data-act="speak">🗣️ Read it to me</button>' : ''}
     <button class="sg-cta" data-act="next">${last ? 'See my results →' : 'Next item →'}</button>`;
   arena.appendChild(s);
   s.querySelector('[data-act="next"]').focus({ preventScroll: true });
+  G.speakText = `${it.n} goes in the ${BIN[it.c].label}. ${it.t}`;
+  if(save.sound) speak(G.speakText);
 }
 
 // ---------- HUD ----------
@@ -473,10 +506,10 @@ function updateHud(){
 
 let toastTimer = null;
 function toast(msg){
-  arena.querySelectorAll('.sg-toast').forEach(t => t.remove());
+  document.querySelectorAll('.sg-toast').forEach(t => t.remove());
   const t = document.createElement('div');
   t.className = 'sg-toast'; t.textContent = msg;
-  arena.appendChild(t);
+  document.body.appendChild(t);
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.remove(), 2200);
 }
@@ -500,10 +533,11 @@ const fx = [];
 const ctx = canvas.getContext('2d');
 function resizeFx(){
   const dpr = Math.min(2, window.devicePixelRatio || 1);
-  canvas.width = arena.clientWidth * dpr; canvas.height = arena.clientHeight * dpr;
+  canvas.width = window.innerWidth * dpr; canvas.height = window.innerHeight * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
-window.addEventListener('resize', () => { if(!arena.hidden) resizeFx(); });
+window.addEventListener('resize', resizeFx);
+resizeFx();
 function burst(x, y, color, n){
   const palette = [color, '#ffffff', '#fde047'];
   for(let i = 0; i < n; i++){
@@ -514,7 +548,7 @@ function burst(x, y, color, n){
   if(!raf) loop();
 }
 function confetti(){
-  const W = arena.clientWidth, colors = Object.values(COLOR).concat(['#fde047', '#f472b6']);
+  const W = window.innerWidth, colors = Object.values(COLOR).concat(['#fde047', '#f472b6']);
   for(let i = 0; i < 140; i++){
     fx.push({ x: Math.random() * W, y: -20 - Math.random() * 200, vx: (Math.random() - .5) * 80, vy: 80 + Math.random() * 160,
               life: 3 + Math.random() * 1.5, t: 0, s: 5 + Math.random() * 5, c: colors[i % colors.length], sq: true, r: Math.random() * 6, g: 60 });
@@ -595,7 +629,8 @@ arena.addEventListener('click', (e) => {
   if(act === 'resume') return resume();
   if(act === 'quit') return quit();
   if(act === 'sound'){ save.sound = !save.sound; persist(); t.textContent = save.sound ? '🔊 Sound on' : '🔇 Sound off'; return; }
-  if(act === 'next'){ closeOverlays(); return continueOrEnd(); }
+  if(act === 'speak') return speak(G.speakText);
+  if(act === 'next'){ stopSpeaking(); closeOverlays(); return continueOrEnd(); }
   if(act === 'again') return start(G.mode);
   if(act === 'share') return share(t);
 });
@@ -635,6 +670,7 @@ function resume(){
 }
 
 function quit(){
+  stopSpeaking();
   G = null;
   fx.length = 0;
   arena.hidden = true;
@@ -714,16 +750,26 @@ function end(){
 
 function share(btn){
   const g = G;
-  const url = location.origin + location.pathname + '#game';
+  const url = location.origin + location.pathname;
   const what = g.mode === 'daily' ? `the OKC Daily Challenge (${dayKey()})` : g.mode === 'rush' ? 'Conveyor Rush' : 'Learn Mode';
-  const text = `I scored ${g.score.toLocaleString()} in ${what} on OKC Trash Sorter 🗑️♻️ — ${g.correct}/${g.answered} sorted right. Can you beat me?`;
-  if(navigator.share){ navigator.share({ title: 'OKC Trash Sorter', text, url }).catch(() => {}); return; }
+  const text = `I scored ${g.score.toLocaleString()} in ${what} on OKC Sort 🗑️♻️ — ${g.correct}/${g.answered} sorted right. Can you beat me?`;
+  if(navigator.share){ navigator.share({ title: 'OKC Sort Games', text, url }).catch(() => {}); return; }
   try{
     navigator.clipboard.writeText(text + ' ' + url).then(() => { btn.textContent = '✓ Copied!'; }, () => { btn.textContent = 'Copy failed'; });
   }catch{ btn.textContent = 'Copy failed'; }
 }
 
 // ---------- public hooks ----------
-window.SortItGame = { stop(){ if(G) quit(); } };
+window.SortItGames = window.SortItGames || {};
+window.SortItCore = {
+  BINS, ITEMS, BIN, COLOR, SHORT, save, persist, award, discover, sfx, buzz, esc, binTag, shuffle,
+  burst, confetti, toast, speak, stopSpeaking,
+  resetEarned(){ earnedThisGame = []; }, earned(){ return earnedThisGame.slice(); },
+  home(){ stopSpeaking(); document.body.classList.remove('sg-lock'); page = 'home'; renderPage(); },
+};
+window.SortItGame = { stop(){
+  if(G) quit();
+  Object.values(window.SortItGames).forEach(g => g.stop && g.stop());
+} };
 renderPage();
 })();
