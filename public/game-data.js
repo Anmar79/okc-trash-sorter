@@ -1,4 +1,4 @@
-// Item data for the "Sort It!" learning game (public/game.html).
+// Item data for the games in the Games tab (public/game.js).
 //
 // Every item and tip here comes from the City of Oklahoma City "What Goes
 // Where" guide — the same rules the photo classifier uses (see rules.js).

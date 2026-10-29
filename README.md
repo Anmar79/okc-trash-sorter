@@ -22,21 +22,27 @@ on iPhone or Android and it behaves like a native app — no app store needed.
    pick the right category.
 4. The app shows the result as a color-coded card with instructions.
 
-## "Play & Learn" game
+## OKC Sort Games (`/games.html`)
 
-The app has two tabs: **📷 Sort a Photo** (the AI classifier) and
-**🎮 Play & Learn**, a game that teaches the same OKC rules. Players drag an
-item (or tap a bin, or press keys 1–5) into one of the five categories and
-get an explanation of the rule after every answer.
+A standalone games page that teaches the City of OKC's sorting rules. It
+doesn't change the photo sorter, so link to it from any app (add `?embed=1` to
+hide its header when it's shown inside another app):
 
-- **Learn & Play** — 12 items (always at least one per bin), with a tip after each.
-- **Beat the Clock** — sort as many as you can in 60 seconds; streaks earn bonus points.
-- **Bin Guide** — browse every item in the game, grouped by bin, with the rule behind it.
+- **🏭 Conveyor Rush** — items ride a conveyor belt; drag each into the right
+  bin before it falls off. 3 lives, faster every level, combo multipliers.
+- **📅 Daily Challenge** — the same 10 items for everyone each day, with a day streak.
+- **👆 Swipe It** — "Recycle or not?" Swipe cards right or left in 45 seconds.
+- **🧺 Bin Catcher** — items fall from the sky; drag, use arrow keys, or tilt
+  the phone to catch only the ones for the current bin.
+- **📸 Photo Hunt** — an AI scavenger hunt: find a real item for the mission's
+  bin, snap it, and the AI (`/api/classify`, needs `ANTHROPIC_API_KEY`) checks it.
+- **🎓 Learn Mode** — 12 items, no timer, with a spoken explanation after each answer.
+- **📖 Trash-o-pedia** and **🏅 14 badges** to unlock.
 
-The game runs entirely in the browser (no API key or network needed) and
-works offline once the app is installed. Link straight to it with `/#game`.
-The game code is `public/game.js` and its item list is `public/game-data.js`
-— if you update `rules.js`, update that list too.
+Scores, badges and discovered items are saved in the browser. Code:
+`public/games.html`, `public/game.js`, `public/minigames.js`,
+`public/game.css`; the item list is `public/game-data.js` — if you update
+`rules.js`, update that list too.
 
 ## Setup
 
