@@ -82,12 +82,40 @@
   }
   @keyframes spin{ to{ transform:rotate(360deg); } }
   footer{ color:#9a9a9a; font-size:0.75rem; text-align:center; max-width:480px; margin-top:6px; }
+  /* Bottom tab bar + full-screen Games view */
+  body{ padding-bottom: calc(max(24px, env(safe-area-inset-bottom)) + 64px); }
+  #tabbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:50; display:flex; justify-content:center;
+    background:var(--card); border-top:1px solid var(--line);
+    padding:6px 16px max(6px, env(safe-area-inset-bottom));
+  }
+  #games-tab{
+    flex:0 1 480px; background:none; color:var(--ink); padding:8px 12px; font-size:0.95rem;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+  }
+  #games-tab .tab-icon{ font-size:1.4rem; line-height:1; }
+  #games-view{
+    display:none; position:fixed; inset:0; z-index:100; background:var(--paper);
+    flex-direction:column;
+  }
+  #games-view.show{ display:flex; }
+  #games-bar{
+    display:flex; align-items:center; gap:10px; background:var(--card); border-bottom:1px solid var(--line);
+    padding: max(8px, env(safe-area-inset-top)) 12px 8px;
+  }
+  #games-back{ flex:0 0 auto; background:#eceae5; color:var(--ink); padding:8px 14px; font-size:0.95rem; }
+  #games-bar span{ font-weight:600; }
+  #games-frame{ flex:1; width:100%; border:0; background:var(--paper); }
   @media (prefers-color-scheme: dark){
     :root{ color-scheme: dark; }
     body{ background:#15171a; color:#f0f0ee; }
     .card{ background:#1e2124; border-color:#2c2f33; }
     #preview-wrap{ background:#2a2d31; border-color:#3a3d41; }
     #upload-btn{ background:#2a2d31; color:#f0f0ee; }
+    #tabbar, #games-bar{ background:#1e2124; border-color:#2c2f33; }
+    #games-tab{ color:#f0f0ee; }
+    #games-back{ background:#2a2d31; color:#f0f0ee; }
+    #games-view, #games-frame{ background:#15171a; }
     header p, footer{ color:#8b8f94; }
   }
 </style>
@@ -133,6 +161,18 @@
   <footer>
     Rules sourced from okc.gov "What Goes Where." When in doubt, confirm with the City of Oklahoma City.
   </footer>
+
+  <nav id="tabbar">
+    <button id="games-tab" type="button"><span class="tab-icon">🎮</span>Games</button>
+  </nav>
+
+  <div id="games-view" role="dialog" aria-label="Games">
+    <div id="games-bar">
+      <button id="games-back" type="button">← Back</button>
+      <span>🎮 Games</span>
+    </div>
+    <iframe id="games-frame" title="OKC Sort Games" allow="fullscreen; autoplay; camera"></iframe>
+  </div>
 
 <script>
 const cameraBtn = document.getElementById('camera-btn');
@@ -258,6 +298,43 @@ function renderResult(data){
   resultEl.classList.add('show');
   resultEl.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
+
+// Games tab: show the games page full-screen in an iframe. If it can't be
+// embedded (blocked or never loads), open the link directly instead.
+const GAMES_URL = 'https://resonant-piroshki-a2812c.netlify.app/games.html?embed=1';
+const gamesView = document.getElementById('games-view');
+const gamesFrame = document.getElementById('games-frame');
+let gamesTimer = null;
+
+function openGamesDirectly(){
+  clearTimeout(gamesTimer);
+  window.location.href = GAMES_URL;
+}
+
+gamesFrame.addEventListener('load', () => {
+  if(!gamesView.classList.contains('show')) return;
+  clearTimeout(gamesTimer);
+  // A blocked frame ends up on about:blank; a cross-origin page that loaded
+  // fine throws when we peek at it, which means it worked.
+  try{
+    const href = gamesFrame.contentWindow.location.href;
+    if(!href || href === 'about:blank') openGamesDirectly();
+  }catch(e){}
+});
+
+document.getElementById('games-tab').addEventListener('click', () => {
+  gamesView.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  if(gamesFrame.getAttribute('src') !== GAMES_URL){
+    gamesFrame.src = GAMES_URL;
+    gamesTimer = setTimeout(openGamesDirectly, 10000);
+  }
+});
+
+document.getElementById('games-back').addEventListener('click', () => {
+  gamesView.classList.remove('show');
+  document.body.style.overflow = '';
+});
 
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
