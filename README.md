@@ -22,6 +22,21 @@ on iPhone or Android and it behaves like a native app — no app store needed.
    pick the right category.
 4. The app shows the result as a color-coded card with instructions.
 
+## "Sort It!" learning game
+
+`public/game.html` is an educational game that teaches the same OKC rules.
+Players drag an item (or tap a bin, or press keys 1–5) into one of the five
+categories and get an explanation of the rule after every answer.
+
+- **Learn & Play** — 12 items (always at least one per bin), with a tip after each.
+- **Beat the Clock** — sort as many as you can in 60 seconds; streaks earn bonus points.
+- **Bin Guide** — browse every item in the game, grouped by bin, with the rule behind it.
+
+The game runs entirely in the browser (no API key or network needed) and
+works offline once the app is installed. It's linked from the main page, or
+open `/game.html` directly. Its item list lives in `public/game-data.js` — if
+you update `rules.js`, update that list too.
+
 ## Setup
 
 1. Install [Node.js](https://nodejs.org) 18 or newer.

@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#1d6f42" />
+<title>Sort It! — OKC Trash Game</title>
+<link rel="manifest" href="/manifest.json" />
+<link rel="icon" href="/icons/icon-192.png" />
+<link rel="apple-touch-icon" href="/icons/icon-192.png" />
+<style>
+  :root{
+    --blue:#1c6fd6; --blue-dark:#134f9c;
+    --green:#1d8f4f; --green-dark:#146637;
+    --amber:#c97b0e; --amber-dark:#8f5a08;
+    --red:#c0392b; --red-dark:#8c281c;
+    --gray:#5b6470; --gray-dark:#3e4550;
+    --ink:#1a1d21; --muted:#666; --paper:#f7f7f5; --card:#ffffff; --line:#e4e2dd; --soft:#eceae5;
+    --ok-bg:#e3f6ea; --ok-ink:#146637; --bad-bg:#fdeceb; --bad-ink:#8c281c;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ink:#f0f0ee; --muted:#8b8f94; --paper:#15171a; --card:#1e2124; --line:#2c2f33; --soft:#2a2d31;
+      --ok-bg:#16301f; --ok-ink:#8fe0ac; --bad-bg:#3a1b18; --bad-ink:#ffb3a8;
+      color-scheme: dark;
+    }
+  }
+  *{box-sizing:border-box;}
+  [hidden]{display:none !important;}
+  body{
+    margin:0; min-height:100vh; background:var(--paper); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+    -webkit-user-select:none; user-select:none;
+  }
+  main{ width:100%; max-width:560px; }
+  a{ color:inherit; }
+  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:8px; }
+  .topbar a, .icon-btn{
+    font-size:0.9rem; text-decoration:none; background:var(--soft); color:var(--ink);
+    border:none; border-radius:10px; padding:8px 12px; cursor:pointer; font:inherit; font-weight:600;
+  }
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px; margin-bottom:16px;
+  }
+  h1{ font-size:1.6rem; margin:0 0 6px; }
+  h2{ font-size:1.15rem; margin:0 0 10px; }
+  p{ line-height:1.5; }
+  .muted{ color:var(--muted); }
+  button.big{
+    font:inherit; font-weight:700; border:none; border-radius:12px; padding:14px 16px;
+    cursor:pointer; font-size:1rem; width:100%; margin-top:10px; color:#fff; background:var(--green);
+  }
+  button.big.alt{ background:var(--blue); }
+  button.big.plain{ background:var(--soft); color:var(--ink); }
+  button.big:active{ filter:brightness(.9); }
+
+  /* Home */
+  .hero{ text-align:center; }
+  .hero .emoji-row{ font-size:2.2rem; letter-spacing:6px; margin-bottom:8px; }
+  .best{ font-size:0.85rem; margin-top:12px; }
+  .mode-desc{ font-size:0.85rem; margin:4px 0 0; text-align:left; }
+
+  /* HUD */
+  .hud{ display:flex; gap:8px; margin-bottom:12px; }
+  .hud div{
+    flex:1; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:8px 10px; text-align:center;
+  }
+  .hud b{ display:block; font-size:1.2rem; }
+  .hud span{ font-size:0.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .bar{ height:8px; border-radius:99px; background:var(--soft); overflow:hidden; margin-bottom:14px; }
+  .bar i{ display:block; height:100%; width:0; background:var(--green); transition:width .3s; }
+  .bar.clock i{ background:var(--amber); transition:width 1s linear; }
+
+  /* Item to sort */
+  .stage{
+    position:relative; height:190px; display:flex; align-items:center; justify-content:center; margin-bottom:12px;
+  }
+  .item{
+    width:200px; padding:16px 12px; border-radius:18px; background:var(--card); border:2px solid var(--line);
+    text-align:center; cursor:grab; touch-action:none; box-shadow:0 6px 18px rgba(0,0,0,.08);
+    transition: transform .2s, opacity .2s;
+  }
+  .item.dragging{ cursor:grabbing; transition:none; box-shadow:0 14px 30px rgba(0,0,0,.2); pointer-events:none; z-index:10; position:relative; }
+  .item.pop{ animation:pop .35s ease-out; }
+  .item.shake{ animation:shake .4s; }
+  .item .e{ font-size:4rem; line-height:1.1; display:block; }
+  .item .n{ font-weight:700; font-size:1.05rem; margin-top:6px; display:block; }
+  .hint{ text-align:center; font-size:0.8rem; margin:-4px 0 12px; }
+  @keyframes pop{ from{ transform:scale(.6); opacity:0; } to{ transform:scale(1); opacity:1; } }
+  @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-10px)} 75%{transform:translateX(10px)} }
+
+  /* Bins */
+  .bins{ display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; }
+  @media (max-width:480px){
+    .bins{ grid-template-columns:repeat(6, 1fr); }
+    .bins .bin{ grid-column:span 2; }
+    .bins .bin:nth-child(4){ grid-column:2 / span 2; }
+  }
+  .bin{
+    font:inherit; color:#fff; border:none; border-radius:14px; padding:12px 4px 10px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:4px; min-height:96px;
+    transition:transform .12s, box-shadow .12s;
+  }
+  .bin .bi{ font-size:1.8rem; }
+  .bin .bl{ font-weight:700; font-size:0.8rem; line-height:1.15; text-align:center; }
+  .bin .bk{ font-size:0.65rem; opacity:.85; }
+  .bin.over, .bin:focus-visible{ transform:scale(1.07); box-shadow:0 0 0 4px rgba(255,255,255,.7), 0 0 0 7px var(--ink); outline:none; }
+  .bin:disabled{ cursor:default; }
+  .bin.dim{ opacity:.35; }
+  .b-regular_trash{ background:var(--blue); }
+  .b-recycling{ background:var(--green); }
+  .b-bulky_pickup{ background:var(--amber); }
+  .b-hazardous_waste{ background:var(--red); }
+  .b-not_accepted{ background:var(--gray); }
+
+  /* Feedback */
+  .feedback{ border-radius:14px; padding:14px; margin-top:14px; }
+  .feedback.ok{ background:var(--ok-bg); color:var(--ok-ink); }
+  .feedback.bad{ background:var(--bad-bg); color:var(--bad-ink); }
+  .feedback h3{ margin:0 0 4px; font-size:1.05rem; }
+  .feedback p{ margin:0; font-size:0.95rem; }
+  .feedback button.big{ margin-top:12px; }
+  .toast{
+    position:fixed; left:50%; top:18px; transform:translateX(-50%); background:var(--ink); color:var(--paper);
+    padding:10px 16px; border-radius:99px; font-weight:700; z-index:50; font-size:0.95rem; max-width:calc(100% - 32px);
+    text-align:center;
+  }
+
+  /* Results */
+  .score-big{ font-size:3rem; font-weight:800; margin:4px 0; }
+  .badge{ font-size:3.2rem; }
+  .review{ list-style:none; padding:0; margin:0; }
+  .review li{ display:flex; gap:10px; padding:10px 0; border-top:1px solid var(--line); font-size:0.9rem; }
+  .review li:first-child{ border-top:none; }
+  .review .e{ font-size:1.8rem; }
+  .tag{ display:inline-block; font-size:0.72rem; font-weight:700; color:#fff; border-radius:6px; padding:2px 6px; margin-top:2px; }
+
+  /* Guide */
+  details{ border:1px solid var(--line); border-radius:12px; margin-bottom:10px; overflow:hidden; background:var(--card); }
+  summary{ cursor:pointer; padding:12px 14px; font-weight:700; color:#fff; list-style:none; display:flex; gap:10px; align-items:center; }
+  summary::-webkit-details-marker{ display:none; }
+  summary .count{ margin-left:auto; font-size:0.8rem; opacity:.85; }
+  details .blurb{ padding:10px 14px 0; margin:0; font-size:0.9rem; }
+  details ul{ list-style:none; margin:0; padding:6px 14px 12px; }
+  details li{ padding:6px 0; font-size:0.88rem; border-top:1px solid var(--line); }
+  details li:first-child{ border-top:none; }
+  footer{ color:var(--muted); font-size:0.75rem; text-align:center; max-width:480px; margin:6px auto 0; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="topbar">
+    <a href="/">📷 Photo Sorter</a>
+    <button class="icon-btn" id="sound-btn" type="button" aria-label="Toggle sound">🔊</button>
+  </div>
+
+  <!-- HOME -->
+  <section id="screen-home">
+    <div class="card hero">
+      <div class="emoji-row" aria-hidden="true">🥫🍌🔋🛋️🛞</div>
+      <h1>Sort It! OKC</h1>
+      <p class="muted">Where does your trash go? Drag each item into the right bin (or tap a bin) and learn Oklahoma City's real "What Goes Where" rules.</p>
+      <button class="big" id="play-practice" type="button">🎓 Learn &amp; Play — 12 items</button>
+      <p class="mode-desc muted">Take your time. After every item you'll see why it goes where it goes.</p>
+      <button class="big alt" id="play-clock" type="button">⏱️ Beat the Clock — 60 seconds</button>
+      <p class="mode-desc muted">Sort as many as you can before time runs out. Streaks earn bonus points!</p>
+      <button class="big plain" id="open-guide" type="button">📘 Bin Guide</button>
+      <p class="best muted" id="best-scores"></p>
+    </div>
+  </section>
+
+  <!-- PLAY -->
+  <section id="screen-play" hidden>
+    <div class="hud">
+      <div><b id="hud-score">0</b><span>Score</span></div>
+      <div><b id="hud-streak">0</b><span>Streak 🔥</span></div>
+      <div><b id="hud-progress">1/12</b><span id="hud-progress-label">Item</span></div>
+    </div>
+    <div class="bar" id="bar"><i id="bar-fill"></i></div>
+
+    <div class="stage" id="stage">
+      <div class="item" id="item" role="img">
+        <span class="e" id="item-emoji"></span>
+        <span class="n" id="item-name"></span>
+      </div>
+    </div>
+    <p class="hint muted" id="hint">Drag the item into a bin — or tap a bin. Keys 1–5 work too.</p>
+
+    <div class="bins" id="bins"></div>
+
+    <div class="feedback" id="feedback" hidden aria-live="polite">
+      <h3 id="fb-title"></h3>
+      <p id="fb-text"></p>
+      <button class="big" id="fb-next" type="button">Next item →</button>
+    </div>
+    <button class="big plain" id="quit-btn" type="button">Quit game</button>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="screen-results" hidden>
+    <div class="card hero">
+      <div class="badge" id="res-badge"></div>
+      <h2 id="res-rank"></h2>
+      <div class="score-big" id="res-score"></div>
+      <p class="muted" id="res-detail"></p>
+      <p id="res-best"></p>
+      <button class="big" id="again-btn" type="button">Play again</button>
+      <button class="big plain" id="home-btn" type="button">Main menu</button>
+    </div>
+    <div class="card" id="review-card">
+      <h2>📝 Items to remember</h2>
+      <ul class="review" id="review"></ul>
+    </div>
+  </section>
+
+  <!-- GUIDE -->
+  <section id="screen-guide" hidden>
+    <div class="card">
+      <h2>📘 OKC Bin Guide</h2>
+      <p class="muted" style="margin:0">Tap a bin to see every item in the game and the rule behind it.</p>
+    </div>
+    <div id="guide-list"></div>
+    <button class="big" id="guide-play" type="button">I'm ready — let's play!</button>
+    <button class="big plain" id="guide-home" type="button">Main menu</button>
+  </section>
+
+  <footer>Rules from okc.gov "What Goes Where." When in doubt, call the City of OKC at (405) 297-2833.</footer>
+</main>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="/game-data.js"></script>
+<script>
+const BINS = window.GAME_BINS;
+const ITEMS = window.GAME_ITEMS;
+const BIN_BY_KEY = Object.fromEntries(BINS.map(b => [b.key, b]));
+const PRACTICE_COUNT = 12;
+const CLOCK_SECONDS = 60;
+
+const $ = (id) => document.getElementById(id);
+const screens = ['home','play','results','guide'];
+function show(name){
+  screens.forEach(s => $('screen-' + s).hidden = s !== name);
+  window.scrollTo(0, 0);
+}
+
+// ---------- storage (best scores, sound pref) ----------
+function load(key, fallback){
+  try{ const v = localStorage.getItem('sortit.' + key); return v === null ? fallback : JSON.parse(v); }
+  catch{ return fallback; }
+}
+function save(key, value){
+  try{ localStorage.setItem('sortit.' + key, JSON.stringify(value)); }catch{}
+}
+
+// ---------- sound ----------
+let soundOn = load('sound', true);
+let audioCtx = null;
+function beep(freqs, dur = 0.12){
+  if(!soundOn) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    freqs.forEach((f, i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      const t = audioCtx.currentTime + i * dur;
+      o.frequency.value = f; o.type = 'triangle';
+      g.gain.setValueAtTime(0.15, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.connect(g).connect(audioCtx.destination);
+      o.start(t); o.stop(t + dur);
+    });
+  }catch{}
+}
+const sfx = {
+  ok: () => beep([660, 880]),
+  bad: () => beep([220, 160], 0.16),
+  end: () => beep([523, 659, 784, 1047], 0.12),
+};
+function renderSoundBtn(){ $('sound-btn').textContent = soundOn ? '🔊' : '🔇'; }
+$('sound-btn').addEventListener('click', () => { soundOn = !soundOn; save('sound', soundOn); renderSoundBtn(); });
+renderSoundBtn();
+
+// ---------- helpers ----------
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+// One of each category first so every round teaches all five bins, then fill randomly.
+function buildDeck(count){
+  const pool = shuffle(ITEMS);
+  const deck = [];
+  BINS.forEach(b => { const i = pool.findIndex(it => it.c === b.key); deck.push(pool.splice(i, 1)[0]); });
+  return shuffle(deck.concat(pool.slice(0, Math.max(0, count - deck.length))));
+}
+function binTag(key){
+  return `<span class="tag b-${key}">${BIN_BY_KEY[key].icon} ${BIN_BY_KEY[key].label}</span>`;
+}
+function escapeHtml(s){ return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// ---------- bins ----------
+BINS.forEach((b, i) => {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'bin b-' + b.key;
+  btn.dataset.key = b.key;
+  btn.setAttribute('aria-label', `${b.label} — ${b.sub} (key ${i + 1})`);
+  btn.innerHTML = `<span class="bi">${b.icon}</span><span class="bl">${b.label}</span><span class="bk">${i + 1}</span>`;
+  btn.addEventListener('click', () => answer(b.key));
+  $('bins').appendChild(btn);
+});
+const binEls = [...$('bins').children];
+
+// ---------- game state ----------
+let game = null;
+
+function startGame(mode){
+  game = {
+    mode,
+    deck: mode === 'practice' ? buildDeck(PRACTICE_COUNT) : buildDeck(ITEMS.length),
+    index: 0, score: 0, streak: 0, bestStreak: 0, correct: 0, answered: 0,
+    misses: [], locked: false, timeLeft: CLOCK_SECONDS, timer: null,
+  };
+  $('bar').classList.toggle('clock', mode === 'clock');
+  $('hud-progress-label').textContent = mode === 'practice' ? 'Item' : 'Seconds';
+  show('play');
+  if(mode === 'clock'){
+    game.timer = setInterval(tick, 1000);
+  }
+  updateHud();
+  nextItem();
+}
+
+function tick(){
+  game.timeLeft--;
+  updateHud();
+  if(game.timeLeft <= 0) endGame();
+}
+
+function updateHud(){
+  $('hud-score').textContent = game.score;
+  $('hud-streak').textContent = game.streak;
+  if(game.mode === 'practice'){
+    $('hud-progress').textContent = `${Math.min(game.index + 1, game.deck.length)}/${game.deck.length}`;
+    $('bar-fill').style.width = (game.answered / game.deck.length * 100) + '%';
+  }else{
+    $('hud-progress').textContent = Math.max(0, game.timeLeft);
+    $('bar-fill').style.width = (Math.max(0, game.timeLeft) / CLOCK_SECONDS * 100) + '%';
+  }
+}
+
+function nextItem(){
+  if(game.index >= game.deck.length){ endGame(); return; }
+  const it = game.deck[game.index];
+  game.locked = false;
+  $('feedback').hidden = true;
+  binEls.forEach(b => { b.disabled = false; b.classList.remove('dim', 'over'); });
+  const el = $('item');
+  el.style.transform = '';
+  el.style.opacity = '';
+  el.classList.remove('pop', 'shake');
+  void el.offsetWidth;
+  el.classList.add('pop');
+  $('item-emoji').textContent = it.e;
+  $('item-name').textContent = it.n;
+  el.setAttribute('aria-label', it.n);
+  updateHud();
+}
+
+function answer(key){
+  if(!game || game.locked) return;
+  game.locked = true;
+  const it = game.deck[game.index];
+  const right = key === it.c;
+  game.answered++;
+  const el = $('item');
+
+  if(right){
+    game.correct++;
+    game.streak++;
+    game.bestStreak = Math.max(game.bestStreak, game.streak);
+    game.score += 10 + Math.min(game.streak - 1, 5) * 2;
+    sfx.ok();
+    // Fly the item into the bin it was dropped on.
+    const r1 = el.getBoundingClientRect();
+    const r2 = binEls.find(b => b.dataset.key === key).getBoundingClientRect();
+    el.style.transition = 'transform .35s ease-in, opacity .35s';
+    el.style.transform = `translate(${r2.left + r2.width/2 - (r1.left + r1.width/2)}px, ${r2.top + r2.height/2 - (r1.top + r1.height/2)}px) scale(.2)`;
+    el.style.opacity = '0';
+  }else{
+    game.streak = 0;
+    game.misses.push({ item: it, picked: key });
+    sfx.bad();
+    el.style.transform = '';
+    el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+  }
+  binEls.forEach(b => { b.disabled = true; if(b.dataset.key !== it.c) b.classList.add('dim'); });
+  updateHud();
+
+  if(game.mode === 'practice'){
+    const fb = $('feedback');
+    fb.className = 'feedback ' + (right ? 'ok' : 'bad');
+    $('fb-title').textContent = right
+      ? pick(['✅ Correct!', '✅ Nice sorting!', '✅ You got it!', '✅ Exactly right!'])
+      : `❌ Not quite — it goes in ${BIN_BY_KEY[it.c].label}`;
+    $('fb-text').textContent = `${it.e} ${it.n}: ${it.t}`;
+    $('fb-next').textContent = game.index + 1 >= game.deck.length ? 'See my results →' : 'Next item →';
+    fb.hidden = false;
+    $('fb-next').focus({ preventScroll: true });
+    fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }else{
+    toast(right ? `✅ +${10 + Math.min(game.streak - 1, 5) * 2}` : `❌ ${BIN_BY_KEY[it.c].icon} ${BIN_BY_KEY[it.c].label}`);
+    setTimeout(() => {
+      if(!game || game.timeLeft <= 0) return;
+      game.index++;
+      nextItem();
+    }, right ? 450 : 1300);
+  }
+}
+function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+$('fb-next').addEventListener('click', () => { game.index++; nextItem(); });
+
+let toastTimer = null;
+function toast(msg){
+  const t = $('toast');
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.hidden = true, 1100);
+}
+
+const RANKS = [
+  { min: 100, badge: '🏆', rank: 'OKC Sorting Champion!' },
+  { min: 80,  badge: '🌟', rank: 'Recycling Pro' },
+  { min: 60,  badge: '♻️', rank: 'Green Cart Guardian' },
+  { min: 40,  badge: '🌱', rank: 'Sorting Sprout' },
+  { min: 0,   badge: '🐣', rank: 'Trash Trainee' },
+];
+
+function endGame(){
+  if(!game) return;
+  clearInterval(game.timer);
+  const g = game;
+  game = null;
+  $('toast').hidden = true;
+  sfx.end();
+
+  const pct = g.answered ? Math.round(g.correct / g.answered * 100) : 0;
+  const r = RANKS.find(r => pct >= r.min);
+  $('res-badge').textContent = r.badge;
+  $('res-rank').textContent = r.rank;
+  $('res-score').textContent = g.score + ' pts';
+  $('res-detail').textContent = `${g.correct} of ${g.answered} correct (${pct}%) · best streak ${g.bestStreak} 🔥`;
+
+  const best = load('best', {});
+  const prev = best[g.mode] || 0;
+  if(g.score > prev){
+    best[g.mode] = g.score; save('best', best);
+    $('res-best').textContent = prev ? `🎉 New high score! (old best: ${prev})` : '🎉 First high score set!';
+  }else{
+    $('res-best').textContent = `High score: ${prev}`;
+  }
+
+  const list = $('review');
+  list.innerHTML = '';
+  if(g.misses.length){
+    g.misses.forEach(m => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="e">${m.item.e}</span><div><b>${escapeHtml(m.item.n)}</b><br>${binTag(m.item.c)}<br><span class="muted">${escapeHtml(m.item.t)}</span></div>`;
+      list.appendChild(li);
+    });
+    $('review-card').querySelector('h2').textContent = '📝 Items to remember';
+  }else{
+    $('review-card').querySelector('h2').textContent = g.answered ? '💯 Perfect round — no mistakes!' : 'No items sorted this time.';
+  }
+  $('again-btn').onclick = () => startGame(g.mode);
+  show('results');
+  renderBest();
+}
+
+$('quit-btn').addEventListener('click', () => {
+  if(!game) return;
+  clearInterval(game.timer);
+  game = null;
+  $('toast').hidden = true;
+  show('home');
+});
+
+// ---------- drag & drop (pointer events: mouse, touch, pen) ----------
+(function setupDrag(){
+  const el = $('item');
+  let start = null, dragging = false, overBin = null;
+
+  function binAt(x, y){
+    const hit = document.elementFromPoint(x, y);
+    return hit && hit.closest ? hit.closest('.bin') : null;
+  }
+  el.addEventListener('pointerdown', (e) => {
+    if(!game || game.locked) return;
+    start = { x: e.clientX, y: e.clientY };
+    dragging = false;
+    e.preventDefault();
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', cancel);
+  });
+  function move(e){
+    const dx = e.clientX - start.x, dy = e.clientY - start.y;
+    if(!dragging && Math.hypot(dx, dy) < 6) return;
+    dragging = true;
+    el.classList.add('dragging');
+    el.classList.remove('pop');
+    el.style.transform = `translate(${dx}px, ${dy}px) rotate(${Math.max(-12, Math.min(12, dx / 12))}deg)`;
+    const b = binAt(e.clientX, e.clientY);
+    if(b !== overBin){
+      overBin && overBin.classList.remove('over');
+      overBin = b;
+      overBin && overBin.classList.add('over');
+    }
+  }
+  function finish(){
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointercancel', cancel);
+    el.classList.remove('dragging');
+    overBin && overBin.classList.remove('over');
+  }
+  function up(e){
+    const target = dragging ? binAt(e.clientX, e.clientY) : null;
+    finish();
+    overBin = null;
+    if(target){ answer(target.dataset.key); }
+    else{ el.style.transition = 'transform .2s'; el.style.transform = ''; setTimeout(() => el.style.transition = '', 200); }
+  }
+  function cancel(){ finish(); overBin = null; el.style.transform = ''; }
+})();
+
+// Keyboard: 1–5 picks a bin, Enter/Space advances.
+document.addEventListener('keydown', (e) => {
+  if(!game) return;
+  const n = parseInt(e.key, 10);
+  if(n >= 1 && n <= BINS.length && !game.locked){ answer(BINS[n - 1].key); }
+});
+
+// ---------- guide ----------
+(function buildGuide(){
+  const wrap = $('guide-list');
+  BINS.forEach(b => {
+    const items = ITEMS.filter(it => it.c === b.key);
+    const d = document.createElement('details');
+    d.innerHTML = `
+      <summary class="b-${b.key}"><span style="font-size:1.4rem">${b.icon}</span>
+        <span>${b.label}<br><small style="font-weight:500;opacity:.9">${b.sub}</small></span>
+        <span class="count">${items.length} items ▾</span></summary>
+      <p class="blurb muted">${escapeHtml(b.blurb)}</p>
+      <ul>${items.map(it => `<li><b>${it.e} ${escapeHtml(it.n)}</b> — <span class="muted">${escapeHtml(it.t)}</span></li>`).join('')}</ul>`;
+    wrap.appendChild(d);
+  });
+})();
+
+// ---------- home ----------
+function renderBest(){
+  const best = load('best', {});
+  const parts = [];
+  if(best.practice) parts.push(`🎓 Learn & Play best: ${best.practice}`);
+  if(best.clock) parts.push(`⏱️ Beat the Clock best: ${best.clock}`);
+  $('best-scores').textContent = parts.join(' · ');
+}
+$('play-practice').addEventListener('click', () => startGame('practice'));
+$('play-clock').addEventListener('click', () => startGame('clock'));
+$('open-guide').addEventListener('click', () => show('guide'));
+$('guide-play').addEventListener('click', () => startGame('practice'));
+$('guide-home').addEventListener('click', () => show('home'));
+$('home-btn').addEventListener('click', () => show('home'));
+renderBest();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
