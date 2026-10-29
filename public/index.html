@@ -103,8 +103,11 @@
     display:flex; align-items:center; gap:10px; background:var(--card); border-bottom:1px solid var(--line);
     padding: max(8px, env(safe-area-inset-top)) 12px 8px;
   }
-  #games-back{ flex:0 0 auto; background:#eceae5; color:var(--ink); padding:8px 14px; font-size:0.95rem; }
+  #games-back{ flex:0 0 auto; background:var(--green); color:#fff; padding:10px 18px; font-size:1rem; }
+  #games-back:active{ background:var(--green-dark); }
   #games-bar span{ font-weight:600; }
+  #games-direct{ display:none; margin-left:auto; color:var(--blue); font-weight:600; font-size:0.9rem; text-decoration:none; }
+  #games-direct.show{ display:inline; }
   #games-frame{ flex:1; width:100%; border:0; background:var(--paper); }
   @media (prefers-color-scheme: dark){
     :root{ color-scheme: dark; }
@@ -114,7 +117,6 @@
     #upload-btn{ background:#2a2d31; color:#f0f0ee; }
     #tabbar, #games-bar{ background:#1e2124; border-color:#2c2f33; }
     #games-tab{ color:#f0f0ee; }
-    #games-back{ background:#2a2d31; color:#f0f0ee; }
     #games-view, #games-frame{ background:#15171a; }
     header p, footer{ color:#8b8f94; }
   }
@@ -170,6 +172,7 @@
     <div id="games-bar">
       <button id="games-back" type="button">← Back</button>
       <span>🎮 Games</span>
+      <a id="games-direct" target="_blank" rel="noopener">Open directly ↗</a>
     </div>
     <iframe id="games-frame" title="OKC Sort Games" allow="fullscreen; autoplay; camera"></iframe>
   </div>
@@ -300,15 +303,19 @@ function renderResult(data){
 }
 
 // Games tab: show the games page full-screen in an iframe. If it can't be
-// embedded (blocked or never loads), open the link directly instead.
+// embedded (blocked or never loads), open the link directly in a new tab so
+// the app (and its Back button) stays put.
 const GAMES_URL = 'https://resonant-piroshki-a2812c.netlify.app/games.html?embed=1';
 const gamesView = document.getElementById('games-view');
 const gamesFrame = document.getElementById('games-frame');
+const gamesDirect = document.getElementById('games-direct');
+gamesDirect.href = GAMES_URL;
 let gamesTimer = null;
 
 function openGamesDirectly(){
   clearTimeout(gamesTimer);
-  window.location.href = GAMES_URL;
+  gamesDirect.classList.add('show');
+  window.open(GAMES_URL, '_blank', 'noopener');
 }
 
 gamesFrame.addEventListener('load', () => {
@@ -327,7 +334,8 @@ document.getElementById('games-tab').addEventListener('click', () => {
   document.body.style.overflow = 'hidden';
   if(gamesFrame.getAttribute('src') !== GAMES_URL){
     gamesFrame.src = GAMES_URL;
-    gamesTimer = setTimeout(openGamesDirectly, 10000);
+    // Still loading after a while: offer the direct link without leaving.
+    gamesTimer = setTimeout(() => gamesDirect.classList.add('show'), 10000);
   }
 });
 
