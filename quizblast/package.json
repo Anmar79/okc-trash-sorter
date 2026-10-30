@@ -1,0 +1,16 @@
+{
+  "name": "quizblast",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-hosted live quiz game: build quizzes, host with a game PIN, players join from their phones.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "express": "^4.21.2",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.1"
+  }
+}

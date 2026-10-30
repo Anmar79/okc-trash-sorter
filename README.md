@@ -44,6 +44,12 @@ Scores, badges and discovered items are saved in the browser. Code:
 `public/game.css`; the item list is `public/game-data.js` — if you update
 `rules.js`, update that list too.
 
+## QuizBlast live quiz app (`quizblast/`)
+
+A separate, self-hosted live quiz game (build quizzes, show them on a projector,
+players join from their phones with a PIN or QR code). It runs as its own
+Node.js server, not on Netlify. See [`quizblast/README.md`](quizblast/README.md).
+
 ## Setup
 
 1. Install [Node.js](https://nodejs.org) 18 or newer.

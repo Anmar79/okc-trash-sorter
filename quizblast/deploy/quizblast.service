@@ -1,0 +1,16 @@
+# Linux: run QuizBlast in the background and restart it on reboot or crash.
+#   sudo cp quizblast.service /etc/systemd/system/
+#   sudo systemctl enable --now quizblast
+[Unit]
+Description=QuizBlast live quiz server
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/quizblast
+ExecStart=/usr/bin/node server.js
+Restart=always
+User=www-data
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
